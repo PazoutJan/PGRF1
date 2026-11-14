@@ -17,6 +17,8 @@ import java.util.List;
 
 public class Controller2D {
     private static final int FILL_COLOR = 0xFF0000;
+    private SeedFill.BoundaryMode seedFillBoundaryMode =
+            SeedFill.BoundaryMode.BACKGROUND_COLOR;
 
     private final Panel panel;
     // The active mode determines how the left mouse button is interpreted.
@@ -150,7 +152,9 @@ public class Controller2D {
                     case FILL:
                         fills.add(new Fill(
                                 new Point2D(e.getX(), e.getY()),
-                                FILL_COLOR
+                                FILL_COLOR,
+                                seedFillBoundaryMode,
+                                0xFFFFFF
                         ));
                         drawScene();
                         break;
@@ -205,6 +209,14 @@ public class Controller2D {
                         break;
 
                     case KeyEvent.VK_F:
+                        seedFillBoundaryMode =
+                                SeedFill.BoundaryMode.BACKGROUND_COLOR;
+                        setDrawMode(DrawMode.FILL);
+                        break;
+
+                    case KeyEvent.VK_B:
+                        seedFillBoundaryMode =
+                                SeedFill.BoundaryMode.BOUNDARY_COLOR;
                         setDrawMode(DrawMode.FILL);
                         break;
                 }
@@ -224,6 +236,8 @@ public class Controller2D {
         for (Fill fill : fills) {
             seedFill.setSeed(fill.getSeed());
             seedFill.setFillColor(fill.getColor());
+            seedFill.setBoundaryMode(fill.getBoundaryMode());
+            seedFill.setBoundaryColor(fill.getBoundaryColor());
             seedFill.fill();
         }
 
