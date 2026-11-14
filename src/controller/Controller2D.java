@@ -36,7 +36,7 @@ public class Controller2D {
     private int selectedPolygonPointIndex = -1;
     private int selectedLineIndex = -1;
 
-    private final Edge fixedEdge = new Edge(200, 300, 400, 100);
+    //private final Edge fixedEdge = new Edge(200, 300, 400, 100);
 
     private enum LineEndpoint{
         START,
@@ -100,7 +100,7 @@ public class Controller2D {
             public void mousePressed(MouseEvent e) {
                 if(e.getButton() == MouseEvent.BUTTON3) {
 
-                    Edge line = fixedEdge;
+                    Edge line = new Edge(0,0,0,0);
 
 
 
@@ -218,12 +218,6 @@ public class Controller2D {
         polygonRasterizer.rasterize(polygon);
         lineRasterizer.rasterize(lines);
 
-        lineRasterizer.rasterize(
-                fixedEdge.getX1(),
-                fixedEdge.getY1(),
-                fixedEdge.getX2(),
-                fixedEdge.getY2());
-
 
         // Výplně se aplikují až po hranicích, aby seed fill nemohl projít skrz
         // polygon nebo úsečku do okolní oblasti.
@@ -278,9 +272,18 @@ public class Controller2D {
         }
             drawScene();
 
-        Point2D lineEnd = new Point2D(e.getX(), e.getY());
-        lineRasterizer.rasterize(lineStart,lineEnd);
+        Point2D lineEnd;
+        if(e.isShiftDown()){
+            lineEnd = getConstrainedLineEnd(
+                    lineStart,
+                    e.getX(),
+                    e.getY()
+            );
+        }else {
+            lineEnd = new Point2D(e.getX(), e.getY());
+        }
 
+        lineRasterizer.rasterize(lineStart,lineEnd);
         panel.repaint();
     }
 
@@ -312,10 +315,19 @@ public class Controller2D {
     private void handleLineReleased(MouseEvent e){
         if(lineStart == null) return;
 
-        Point2D lineEnd = new Point2D(e.getX(), e.getY());
-        Line line = new Line(lineStart,lineEnd);
+        Point2D lineEnd;
 
-        lines.addLine(line);
+        if(e.isShiftDown()){
+            lineEnd = getConstrainedLineEnd(
+                    lineStart,
+                    e.getX(),
+                    e.getY()
+            );
+        }else {
+            lineEnd = new Point2D(e.getX(), e.getY());
+        }
+
+        lines.addLine(new Line(lineStart, lineEnd));
         lineStart = null;
         drawScene();
     }
@@ -386,6 +398,100 @@ public class Controller2D {
             lines.removeLine(selectedLineIndex);
         }
 
+    }
+    //TODO: Přesunout někam jinam
+    private Point2D getConstrainedLineEnd(Point2D start, int mouseX, int mouseY) {
+        int dx = mouseX - start.getX();
+        int dy = mouseY - start.getY();
+
+        double bestDistance = Double.POSITIVE_INFINITY;
+        Point2D bestPoint = null;
+
+        // 1. Vodorovná úsečka.
+        Point2D horizontal = new Point2D(
+                start.getX() + dx,
+                start.getY()
+        );
+
+        double horizontalDistance = distanceSquared(
+                mouseX,
+                mouseY,
+                horizontal
+        );
+
+        if (horizontalDistance < bestDistance) {
+            bestDistance = horizontalDistance;
+            bestPoint = horizontal;
+        }
+
+        // 2. Svislá úsečka.
+        Point2D vertical = new Point2D(
+                start.getX(),
+                start.getY() + dy
+        );
+
+        double verticalDistance = distanceSquared(
+                mouseX,
+                mouseY,
+                vertical
+        );
+
+        if (verticalDistance < bestDistance) {
+            bestDistance = verticalDistance;
+            bestPoint = vertical;
+        }
+
+        // 3. Diagonála se sklonem +1.
+        //
+        // Projekce bodu myši na přímku:
+        // x - startX = y - startY
+        double diagonalPositiveOffset = (dx + dy) / 2.0;
+
+        Point2D diagonalPositive = new Point2D(
+                start.getX() + (int) Math.round(diagonalPositiveOffset),
+                start.getY() + (int) Math.round(diagonalPositiveOffset)
+        );
+
+        double diagonalPositiveDistance = distanceSquared(
+                mouseX,
+                mouseY,
+                diagonalPositive
+        );
+
+        if (diagonalPositiveDistance < bestDistance) {
+            bestDistance = diagonalPositiveDistance;
+            bestPoint = diagonalPositive;
+        }
+
+        // 4. Diagonála se sklonem -1.
+        //
+        // Projekce bodu myši na přímku:
+        // x - startX = -(y - startY)
+        double diagonalNegativeOffset = (dx - dy) / 2.0;
+
+        Point2D diagonalNegative = new Point2D(
+                start.getX() + (int) Math.round(diagonalNegativeOffset),
+                start.getY() - (int) Math.round(diagonalNegativeOffset)
+        );
+
+        double diagonalNegativeDistance = distanceSquared(
+                mouseX,
+                mouseY,
+                diagonalNegative
+        );
+
+        if (diagonalNegativeDistance < bestDistance) {
+            bestPoint = diagonalNegative;
+        }
+
+        return bestPoint;
+    }
+
+    private double distanceSquared(int x, int y, Point2D point) {
+        double dx = x - point.getX();
+        double dy = y - point.getY();
+
+        return dx * dx + dy * dy;
     }
 
 
