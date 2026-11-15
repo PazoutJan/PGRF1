@@ -38,4 +38,52 @@ public class PolygonRasterizer {
             lineRasterizer.rasterize(pointA,pointB);
         }
     }
+
+    public void rasterize(Polygon polygon, int color) {
+        int size = polygon.getSize();
+
+        if (size == 0) {
+            return;
+        }
+
+        if (size == 1) {
+            Point2D point = polygon.getPoint(0);
+
+            lineRasterizer.rasterize(
+                    point.getX(),
+                    point.getY(),
+                    point.getX(),
+                    point.getY(),
+                    color
+            );
+            return;
+        }
+
+        if (size == 2) {
+            Point2D first = polygon.getPoint(0);
+            Point2D second = polygon.getPoint(1);
+
+            lineRasterizer.rasterize(
+                    first.getX(),
+                    first.getY(),
+                    second.getX(),
+                    second.getY(),
+                    color
+            );
+            return;
+        }
+
+        for (int i = 0; i < size; i++) {
+            Point2D pointA = polygon.getPoint(i);
+            Point2D pointB = polygon.getPoint((i + 1) % size);
+
+            lineRasterizer.rasterize(
+                    pointA.getX(),
+                    pointA.getY(),
+                    pointB.getX(),
+                    pointB.getY(),
+                    color
+            );
+        }
+    }
 }

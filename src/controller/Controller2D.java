@@ -8,6 +8,7 @@ import rasterize.LineRasterizerTrivial;
 import rasterize.PolygonRasterizer;
 import view.Panel;
 import clipping.CohenSutherlandClipper;
+import clipping.ConvexPolygonClipper;
 
 import java.awt.*;
 import java.awt.event.KeyAdapter;
@@ -51,6 +52,15 @@ public class Controller2D {
 
     private boolean clippingEnabled;
 
+    private final Polygon clippingPolygon;
+    private final Polygon polygonToClip;
+    private final Polygon clippedPolygon;
+    private final ConvexPolygonClipper polygonClipper;
+
+    private static final int CLIPPING_SUBJECT_COLOR = 0xAAAAAA;
+    private static final int CLIPPING_WINDOW_COLOR = 0x0000FF;
+    private static final int CLIPPING_RESULT_COLOR = 0xFF0000;
+
     //private final Edge fixedEdge = new Edge(200, 300, 400, 100);
 
     private enum LineEndpoint{
@@ -78,6 +88,11 @@ public class Controller2D {
         clippingLines = new Lines();
         clippedLines = new Lines();
         clippingEnabled = false;
+
+        clippingPolygon = new Polygon();
+        polygonToClip = new Polygon();
+        clippedPolygon = new Polygon();
+        polygonClipper = new ConvexPolygonClipper();
 
         initListeners();
         drawScene();
@@ -141,34 +156,11 @@ public class Controller2D {
         panel.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                if(e.getButton() == MouseEvent.BUTTON3) {
 
-                    Edge line = new Edge(0,0,0,0);
-
-
-
-                    //1. Spočítáme tečný vektor
-                    Vector vektorT = new Vector(line.getX2()-line.getX1(),line.getY2()-line.getY1());
-
-                    //2. Spočítáme normálový vektor
-                    Vector vektorN = new Vector(vektorT.getY(),-vektorT.getX());
-
-                    //3. Spočítáme vektor k bodu P
-                    Vector vektorV = new Vector(e.getX()-line.getX1(),e.getY()-line.getY1());
-
-                    //4. Skalární součin
-                    double dot = vektorV.getX()*vektorN.getX() + vektorV.getY()*vektorN.getY();
-
-                    //5. porovnat znaménko výsledku skalárního součinu (úhel)
-                    //vyhodnotit jestli je vlevo nebo vpravo
-
-                    if(dot > 0){
-                        System.out.println("Je vlevo");
-                    }
-                    else System.out.println("Je vpravo");
-
+                if(drawMode == DrawMode.POLYGON_CLIPPING){
+                    handlePolygonClippingPressed(e);
+                    return;
                 }
-
 
                 if(e.getButton() != MouseEvent.BUTTON1) return;
 
@@ -282,12 +274,29 @@ public class Controller2D {
                         setDrawMode(DrawMode.LINE);
                         drawScene();
                         break;
+
+                    case KeyEvent.VK_O:
+                        scanLineEnabled = false;
+                        clippingEnabled = false;
+
+                        clippingPolygon.clearPolygon();
+                        polygonToClip.clearPolygon();
+                        clippedPolygon.clearPolygon();
+
+                        setDrawMode(DrawMode.POLYGON_CLIPPING);
+                        drawScene();
+                        break;
                 }
             }
         });
     }
 
     private void drawScene(){
+
+        if (drawMode == DrawMode.POLYGON_CLIPPING) {
+                drawPolygonClippingScene();
+                return;
+        }
         // Rebuild the raster from the model so temporary preview pixels do not remain.
         panel.getRaster().clear();
 
@@ -360,6 +369,10 @@ public class Controller2D {
         clippedLines.clearLines();
         clippingEnabled = false;
 
+        clippingPolygon.clearPolygon();
+        polygonToClip.clearPolygon();
+        clippedPolygon.clearPolygon();
+
         panel.repaint();
     }
     private enum DrawMode{
@@ -367,7 +380,8 @@ public class Controller2D {
         POLYGON,
         EDIT,
         DELETE,
-        FILL
+        FILL,
+        POLYGON_CLIPPING
     }
 
     private void setDrawMode(DrawMode drawMode){
@@ -692,6 +706,72 @@ public class Controller2D {
         }
     }
 
+    private void handlePolygonClippingPressed(MouseEvent e) {
+        Point2D point = new Point2D(e.getX(), e.getY());
+
+        if (e.getButton() == MouseEvent.BUTTON1) {
+            polygonToClip.addPoint(point);
+            recomputePolygonClipping();
+            drawScene();
+            return;
+        }
+
+        if (e.getButton() == MouseEvent.BUTTON3) {
+            clippingPolygon.addPoint(point);
+            recomputePolygonClipping();
+            drawScene();
+        }
+    }
+
+    private void recomputePolygonClipping() {
+        clippedPolygon.clearPolygon();
+
+        if (clippingPolygon.getSize() < 5) {
+            return;
+        }
+
+        if (polygonToClip.getSize() < 3) {
+            return;
+        }
+
+        Polygon result = polygonClipper.clip(
+                polygonToClip,
+                clippingPolygon
+        );
+
+        for (int i = 0; i < result.getSize(); i++) {
+            clippedPolygon.addPoint(result.getPoint(i));
+        }
+    }
+
+    private void copyPolygon(Polygon source, Polygon target) {
+        target.clearPolygon();
+
+        for (int i = 0; i < source.getSize(); i++) {
+            target.addPoint(source.getPoint(i));
+        }
+    }
+
+    private void drawPolygonClippingScene() {
+        panel.getRaster().clear();
+
+        polygonRasterizer.rasterize(
+                polygonToClip,
+                CLIPPING_SUBJECT_COLOR
+        );
+
+        polygonRasterizer.rasterize(
+                clippingPolygon,
+                CLIPPING_WINDOW_COLOR
+        );
+
+        polygonRasterizer.rasterize(
+                clippedPolygon,
+                CLIPPING_RESULT_COLOR
+        );
+
+        panel.repaint();
+    }
 
 
 }
