@@ -24,6 +24,16 @@ public abstract class LineRasterizer {
         rasterize(pointA.getX(), pointA.getY(), pointB.getX(), pointB.getY());
     }
 
+    public void rasterize(Point2D pointA, Point2D pointB, int color) {
+        rasterize(
+                pointA.getX(),
+                pointA.getY(),
+                pointB.getX(),
+                pointB.getY(),
+                color
+        );
+    }
+
     public abstract void rasterize(
             int x1,
             int y1,

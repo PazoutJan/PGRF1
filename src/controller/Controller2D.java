@@ -6,6 +6,7 @@ import model.Polygon;
 import rasterize.LineRasterizer;
 import rasterize.LineRasterizerTrivial;
 import rasterize.PolygonRasterizer;
+import view.ColorPalette;
 import view.Panel;
 import clipping.CohenSutherlandClipper;
 import clipping.ConvexPolygonClipper;
@@ -19,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Controller2D {
-    private static final int FILL_COLOR = 0xFF0000;
     private SeedFill.BoundaryMode seedFillBoundaryMode =
             SeedFill.BoundaryMode.BACKGROUND_COLOR;
 
@@ -57,7 +57,9 @@ public class Controller2D {
     private final Polygon clippedPolygon;
     private final ConvexPolygonClipper polygonClipper;
 
-    private static final int CLIPPING_SUBJECT_COLOR = 0xAAAAAA;
+    private final ColorPalette colorPalette;
+    private int currentColor;
+
     private static final int CLIPPING_WINDOW_COLOR = 0x0000FF;
     private static final int CLIPPING_RESULT_COLOR = 0xFF0000;
 
@@ -93,6 +95,9 @@ public class Controller2D {
         polygonToClip = new Polygon();
         clippedPolygon = new Polygon();
         polygonClipper = new ConvexPolygonClipper();
+
+        colorPalette = new ColorPalette();
+        currentColor = colorPalette.getColor(1);
 
         initListeners();
         drawScene();
@@ -185,7 +190,7 @@ public class Controller2D {
                     case FILL:
                         fills.add(new Fill(
                                 new Point2D(e.getX(), e.getY()),
-                                FILL_COLOR,
+                                currentColor,
                                 seedFillBoundaryMode,
                                 0xFFFFFF
                         ));
@@ -286,6 +291,46 @@ public class Controller2D {
                         setDrawMode(DrawMode.POLYGON_CLIPPING);
                         drawScene();
                         break;
+
+                    case KeyEvent.VK_0:
+                    case KeyEvent.VK_NUMPAD0:
+                        selectColor(0);
+                        break;
+
+                    case KeyEvent.VK_1:
+                    case KeyEvent.VK_NUMPAD1:
+                        selectColor(1);
+                        break;
+
+                    case KeyEvent.VK_2:
+                    case KeyEvent.VK_NUMPAD2:
+                        selectColor(2);
+                        break;
+
+                    case KeyEvent.VK_3:
+                    case KeyEvent.VK_NUMPAD3:
+                        selectColor(3);
+                        break;
+
+                    case KeyEvent.VK_4:
+                    case KeyEvent.VK_NUMPAD4:
+                        selectColor(4);
+                        break;
+
+                    case KeyEvent.VK_5:
+                    case KeyEvent.VK_NUMPAD5:
+                        selectColor(5);
+                        break;
+
+                    case KeyEvent.VK_6:
+                    case KeyEvent.VK_NUMPAD6:
+                        selectColor(6);
+                        break;
+
+                    case KeyEvent.VK_7:
+                    case KeyEvent.VK_NUMPAD7:
+                        selectColor(7);
+                        break;
                 }
             }
         });
@@ -302,12 +347,12 @@ public class Controller2D {
 
         if (scanLineEnabled) {
             scanLineFill.setPolygon(polygon);
-            scanLineFill.setFillColor(0xFF00FF);
+            scanLineFill.setFillColor(currentColor);
             scanLineFill.fill();
         }
 
-        polygonRasterizer.rasterize(polygon);
-        lineRasterizer.rasterize(lines);
+        polygonRasterizer.rasterize(polygon, currentColor);
+        rasterizeLines(lines, currentColor);
 
 
         // Výplně se aplikují až po hranicích, aby seed fill nemohl projít skrz
@@ -330,7 +375,7 @@ public class Controller2D {
                         original.getStart().getY(),
                         original.getEnd().getX(),
                         original.getEnd().getY(),
-                        0xAAAAAA
+                        currentColor
                 );
             }
             for (int i = 0; i < clippedLines.getSize(); i++) {
@@ -347,6 +392,13 @@ public class Controller2D {
         }
 
         panel.repaint();
+    }
+
+    private void rasterizeLines(Lines lines, int color) {
+        for (int i = 0; i < lines.getSize(); i++) {
+            Line line = lines.getLine(i);
+            lineRasterizer.rasterize(line.getStart(), line.getEnd(), color);
+        }
     }
 
     private void clearScene(){
@@ -419,7 +471,7 @@ public class Controller2D {
             lineEnd = new Point2D(e.getX(), e.getY());
         }
 
-        lineRasterizer.rasterize(lineStart,lineEnd);
+        lineRasterizer.rasterize(lineStart, lineEnd, currentColor);
         panel.repaint();
     }
 
@@ -441,10 +493,10 @@ public class Controller2D {
         Point2D lastPoint = polygon.getPoint(polygon.getSize() - 1);
 
         // The new polygon vertex is only a preview until the mouse is released.
-        lineRasterizer.rasterize(previewPoint,firstPoint);
+        lineRasterizer.rasterize(previewPoint, firstPoint, currentColor);
 
         if(polygon.getSize() > 1){
-            lineRasterizer.rasterize(previewPoint,lastPoint);
+            lineRasterizer.rasterize(previewPoint, lastPoint, currentColor);
         }
     }
 
@@ -675,19 +727,23 @@ public class Controller2D {
         int ymax = 450;
         lineRasterizer.rasterize(
                 xmin, ymin,
-                xmax, ymin
+                xmax, ymin,
+                CLIPPING_WINDOW_COLOR
         );
         lineRasterizer.rasterize(
                 xmax, ymin,
-                xmax, ymax
+                xmax, ymax,
+                CLIPPING_WINDOW_COLOR
         );
         lineRasterizer.rasterize(
                 xmax, ymax,
-                xmin, ymax
+                xmin, ymax,
+                CLIPPING_WINDOW_COLOR
         );
         lineRasterizer.rasterize(
                 xmin, ymax,
-                xmin, ymin
+                xmin, ymin,
+                CLIPPING_WINDOW_COLOR
         );
     }
 
@@ -755,10 +811,7 @@ public class Controller2D {
     private void drawPolygonClippingScene() {
         panel.getRaster().clear();
 
-        polygonRasterizer.rasterize(
-                polygonToClip,
-                CLIPPING_SUBJECT_COLOR
-        );
+        polygonRasterizer.rasterize(polygonToClip, currentColor);
 
         polygonRasterizer.rasterize(
                 clippingPolygon,
@@ -771,6 +824,11 @@ public class Controller2D {
         );
 
         panel.repaint();
+    }
+
+    private void selectColor(int index) {
+        currentColor = colorPalette.getColor(index);
+        drawScene();
     }
 
 
