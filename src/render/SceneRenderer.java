@@ -51,7 +51,10 @@ public class SceneRenderer {
         raster.clear();
 
         if (polygonClippingMode) {
-            polygonRasterizer.rasterize(scene.getPolygonToClip(), currentColor);
+                polygonRasterizer.rasterize(
+                        scene.getPolygonToClip(),
+                        scene.getPolygonToClip().getColor()
+                );
             polygonRasterizer.rasterize(
                     scene.getClippingPolygon(),
                     CLIPPING_WINDOW_COLOR
@@ -66,12 +69,15 @@ public class SceneRenderer {
 
         if (scanLineEnabled) {
             scanLineFill.setPolygon(scene.getPolygon());
-            scanLineFill.setFillColor(currentColor);
+            scanLineFill.setFillColor(scene.getPolygon().getColor());
             scanLineFill.fill();
         }
 
-        polygonRasterizer.rasterize(scene.getPolygon(), currentColor);
-        rasterizeLines(scene.getLines(), currentColor);
+        polygonRasterizer.rasterize(
+                scene.getPolygon(),
+                scene.getPolygon().getColor()
+        );
+        rasterizeLines(scene.getLines());
 
         // Fill after drawing boundaries so seed fill cannot cross them.
         for (Fill fill : scene.getFills()) {
@@ -84,7 +90,7 @@ public class SceneRenderer {
 
         if (clippingEnabled) {
             drawClippingWindow();
-            rasterizeLines(scene.getClippingLines(), currentColor);
+            //rasterizeLines(scene.getClippingLines(), currentColor);
             rasterizeLines(scene.getClippedLines(), CLIPPING_RESULT_COLOR);
         }
 
@@ -108,6 +114,17 @@ public class SceneRenderer {
 
         if (scene.getPolygon().getSize() > 1) {
             lineRasterizer.rasterize(previewPoint, lastPoint, color);
+        }
+    }
+
+    private void rasterizeLines(Lines lines) {
+        for (int i = 0; i < lines.getSize(); i++) {
+            Line line = lines.getLine(i);
+            lineRasterizer.rasterize(
+                    line.getStart(),
+                    line.getEnd(),
+                    line.getColor()
+            );
         }
     }
 

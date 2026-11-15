@@ -116,7 +116,7 @@ public class Controller2D {
                                 new Point2D(e.getX(), e.getY()),
                                 currentColor,
                                 seedFillBoundaryMode,
-                                0xFFFFFF
+                                getBoundaryColor()
                         ));
                         drawScene();
                         break;
@@ -283,6 +283,9 @@ public class Controller2D {
 
     private void handlePolygonPressed() {
         drawingPolygonPoint = true;
+        if (scene.getPolygon().getSize() == 0) {
+            scene.getPolygon().setColor(currentColor);
+        }
     }
 
     private void handleLineDragged(MouseEvent e) {
@@ -322,7 +325,11 @@ public class Controller2D {
             return;
         }
 
-        Line line = new Line(lineStart, constrainedEndpoint(e));
+        Line line = new Line(
+                lineStart,
+                constrainedEndpoint(e),
+                currentColor
+        );
         if (clippingEnabled) {
             scene.getClippingLines().addLine(line);
             recomputeClippedLines();
@@ -376,12 +383,12 @@ public class Controller2D {
         if (selected.getEndpoint() == Selection.Endpoint.START) {
             lines.setLine(
                     selected.getIndex(),
-                    new Line(newPoint, oldLine.getEnd())
+                    new Line(newPoint, oldLine.getEnd(), oldLine.getColor())
             );
         } else {
             lines.setLine(
                     selected.getIndex(),
-                    new Line(oldLine.getStart(), newPoint)
+                    new Line(oldLine.getStart(), newPoint, oldLine.getColor())
             );
         }
     }
@@ -413,6 +420,9 @@ public class Controller2D {
     private void handlePolygonClippingPressed(MouseEvent e) {
         Point2D point = new Point2D(e.getX(), e.getY());
         if (e.getButton() == MouseEvent.BUTTON1) {
+            if (scene.getPolygonToClip().getSize() == 0) {
+                scene.getPolygonToClip().setColor(currentColor);
+            }
             scene.getPolygonToClip().addPoint(point);
         } else if (e.getButton() == MouseEvent.BUTTON3) {
             scene.getClippingPolygon().addPoint(point);
@@ -435,6 +445,18 @@ public class Controller2D {
     private void selectColor(int index) {
         currentColor = colorPalette.getColor(index);
         drawScene();
+    }
+
+    private int getBoundaryColor() {
+        if (scene.getPolygon().getSize() >= 3) {
+            return scene.getPolygon().getColor();
+        }
+
+        if (scene.getLines().getSize() > 0) {
+            return scene.getLines().getLine(0).getColor();
+        }
+
+        return 0xFFFFFF;
     }
 
     private enum DrawMode {

@@ -5,6 +5,7 @@ import java.util.List;
 
 public class Polygon {
     private final List<Point2D> points;
+    private int color = 0xFFFFFF;
 
     public Polygon(){
         points = new ArrayList<>();
@@ -28,5 +29,13 @@ public class Polygon {
     }
     public void removePoint(int index){
         points.remove(index);
+    }
+
+    public int getColor() {
+        return color;
+    }
+
+    public void setColor(int color) {
+        this.color = color & 0xFFFFFF;
     }
 }
