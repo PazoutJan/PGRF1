@@ -21,68 +21,60 @@ public class ScanLineFill implements Filler{
 
 
 
+    @Override
     public void fill() {
-        if(polygon == null || polygon.getSize()<3) return;
+        if (polygon == null || polygon.getSize() < 3) {
+            return;
+        }
 
-        List<Edge> edges = new ArrayList<Edge>();
-        for(int i = 0; i < polygon.getSize();i++){
+        List<Edge> edges = new ArrayList<>();
+
+        int yMin = polygon.getPoint(0).getY();
+        int yMax = yMin;
+
+        for (int i = 0; i < polygon.getSize(); i++) {
             Point2D pointA = polygon.getPoint(i);
-            Point2D pointB = polygon.getPoint((i+1) % polygon.getSize());
+            Point2D pointB = polygon.getPoint((i + 1) % polygon.getSize());
+
+            yMin = Math.min(yMin, pointA.getY());
+            yMax = Math.max(yMax, pointA.getY());
 
             Edge edge = new Edge(pointA, pointB);
 
-            if(!edge.isHorizontal()) {
+            if (!edge.isHorizontal()) {
                 edge.orientate();
                 edges.add(edge);
             }
         }
 
-
-
-        //TODO:Najít min a max Y
-        int yMin = polygon.getPoint(0).getY();
-        int yMax = yMin;
-
-        for(int i = 1; i < polygon.getSize();i++){
-            int y = polygon.getPoint(i).getY();
-
-            if(y < yMin) yMin = y;
-            if(y > yMax) yMax = y;
-        }
-
-
-        for(int y = yMin; y < yMax; y++) {
+        for (int y = yMin; y < yMax; y++) {
             List<Integer> intersections = new ArrayList<>();
 
-            //TODO:Pro danou scanline se ptáme jestli existuje
-            //Průsečík s hranou (se všema)
-
-            for(Edge edge : edges) {
-
-                if(edge.isIntersection(y)) {
-                    //TODO:Spočítáme průsečík
-                    //TODO:průsečík uložit - do seznamu průsečíků
+            for (Edge edge : edges) {
+                if (edge.isIntersection(y)) {
                     intersections.add(edge.getIntersection(y));
                 }
             }
+
             intersections.sort(Integer::compareTo);
 
-            //Máme průsečíky
-            //TODO:Spojíme lichý se sudým
-
-            for(int i = 0; i < intersections.size(); i+=2) {
+            for (int i = 0; i + 1 < intersections.size(); i += 2) {
                 int xStart = intersections.get(i);
-                int xEnd = intersections.get(i+1);
+                int xEnd = intersections.get(i + 1);
 
-                for(int x = xStart; x <= xEnd; x++) {
+                if (xStart > xEnd) {
+                    int temporary = xStart;
+                    xStart = xEnd;
+                    xEnd = temporary;
+                }
+
+                for (int x = xStart; x <= xEnd; x++) {
                     raster.setPixel(x, y, fillColor);
                 }
             }
-            //TODO:Obtáhneme polygon
         }
-
-
     }
+
     public void setFillColor(int fillColor) {
         this.fillColor = fillColor & 0xFFFFFF;
     }

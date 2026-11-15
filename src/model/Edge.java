@@ -38,7 +38,6 @@ public class Edge {
     }
 
     public void orientate(){
-        //TODO: Zařídí že hrana bude orientovaná dolů/nahoru (má vliv na podmínku zjišťování průsečíků)
         if(y1>y2){
             int tempx = x1;
             int tempy = y1;
@@ -50,15 +49,19 @@ public class Edge {
     }
 
     public boolean isIntersection(int y){
-        //TODO:Napsat podmínku jestli existuje průsečík s hranou
-            //Podmínka je v prezentaci z přednášky (asi prezentace 4)
-            //tady se hrana zkrátí o jedna
         return y >= y1 && y < y2;
     }
 
-    public int getIntersection(int y){
-        //TODO:Spočítáme průsečík (vzorec v prezentaci 3)
-        double x = x1 + (double) (y -y1) * (x2 - x1) / (y2 - y1);
+    public int getIntersection(int y) {
+        if (isHorizontal()) {
+            throw new IllegalStateException(
+                    "Horizontal edge has no unique scan-line intersection"
+            );
+        }
+
+        double x = x1
+                + (double) (y - y1) * (x2 - x1) / (y2 - y1);
+
         return (int) Math.round(x);
     }
 

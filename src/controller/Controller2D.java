@@ -1,4 +1,5 @@
 package controller;
+import fill.ScanLineFill;
 import fill.SeedFill;
 import model.*;
 import model.Polygon;
@@ -38,6 +39,9 @@ public class Controller2D {
     private int selectedPolygonPointIndex = -1;
     private int selectedLineIndex = -1;
 
+    private final ScanLineFill scanLineFill;
+    private boolean scanLineEnabled;
+
     //private final Edge fixedEdge = new Edge(200, 300, 400, 100);
 
     private enum LineEndpoint{
@@ -54,6 +58,10 @@ public class Controller2D {
         polygon = new Polygon();
         lines = new Lines();
         fills = new ArrayList<>();
+
+        scanLineFill = new ScanLineFill(panel.getRaster());
+        scanLineFill.setFillColor(0xFF00FF);
+        scanLineEnabled = false;
 
         initListeners();
         drawScene();
@@ -189,11 +197,13 @@ public class Controller2D {
                         break;
 
                     case KeyEvent.VK_L:
+                        scanLineEnabled = false;
                         setDrawMode(DrawMode.LINE);
                         drawScene();
                         break;
 
                     case KeyEvent.VK_P:
+                        scanLineEnabled = false;
                         setDrawMode(DrawMode.POLYGON);
                         drawScene();
                         break;
@@ -219,6 +229,12 @@ public class Controller2D {
                                 SeedFill.BoundaryMode.BOUNDARY_COLOR;
                         setDrawMode(DrawMode.FILL);
                         break;
+
+                    case KeyEvent.VK_S:
+                        scanLineEnabled = true;
+                        setDrawMode(DrawMode.POLYGON);
+                        drawScene();
+                        break;
                 }
             }
         });
@@ -227,6 +243,13 @@ public class Controller2D {
     private void drawScene(){
         // Rebuild the raster from the model so temporary preview pixels do not remain.
         panel.getRaster().clear();
+
+        if (scanLineEnabled) {
+            scanLineFill.setPolygon(polygon);
+            scanLineFill.setFillColor(0xFF00FF);
+            scanLineFill.fill();
+        }
+
         polygonRasterizer.rasterize(polygon);
         lineRasterizer.rasterize(lines);
 
@@ -248,13 +271,18 @@ public class Controller2D {
         polygon.clearPolygon();
         lines.clearLines();
         fills.clear();
+
+        scanLineEnabled = false;
+
         panel.getRaster().clear();
-        panel.repaint();
+
         lineStart = null;
         drawingPolygonPoint = false;
         selectedPolygonPointIndex = -1;
         selectedLineIndex = -1;
         selectedLineEndpoint = null;
+
+        panel.repaint();
     }
     private enum DrawMode{
         LINE,
