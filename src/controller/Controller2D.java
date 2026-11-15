@@ -7,6 +7,7 @@ import rasterize.LineRasterizer;
 import rasterize.LineRasterizerTrivial;
 import rasterize.PolygonRasterizer;
 import view.Panel;
+import clipping.CohenSutherlandClipper;
 
 import java.awt.*;
 import java.awt.event.KeyAdapter;
@@ -38,9 +39,17 @@ public class Controller2D {
 
     private int selectedPolygonPointIndex = -1;
     private int selectedLineIndex = -1;
+    private int selectedClippingLineIndex = -1;
 
     private final ScanLineFill scanLineFill;
     private boolean scanLineEnabled;
+
+    private final CohenSutherlandClipper clipper;
+
+    private final Lines clippingLines;
+    private final Lines clippedLines;
+
+    private boolean clippingEnabled;
 
     //private final Edge fixedEdge = new Edge(200, 300, 400, 100);
 
@@ -49,6 +58,7 @@ public class Controller2D {
         END
     }
     private LineEndpoint selectedLineEndpoint = null;
+    private LineEndpoint selectedClippingLineEndpoint = null;
 
     public Controller2D(Panel panel) {
         this.panel = panel;
@@ -62,6 +72,12 @@ public class Controller2D {
         scanLineFill = new ScanLineFill(panel.getRaster());
         scanLineFill.setFillColor(0xFF00FF);
         scanLineEnabled = false;
+
+        clipper = new CohenSutherlandClipper(150,650, 100, 450);
+
+        clippingLines = new Lines();
+        clippedLines = new Lines();
+        clippingEnabled = false;
 
         initListeners();
         drawScene();
@@ -99,6 +115,23 @@ public class Controller2D {
                            else if(selectedLineEndpoint == LineEndpoint.END){
                                lines.setLine(selectedLineIndex,new Line(oldLine.getStart(),newPoint));
                            }
+                           drawScene();
+                       }
+                       else if (selectedClippingLineIndex != -1) {
+                           Line oldLine = clippingLines.getLine(selectedClippingLineIndex);
+                           Point2D newPoint = new Point2D(e.getX(), e.getY());
+                           if (selectedClippingLineEndpoint == LineEndpoint.START) {
+                               clippingLines.setLine(
+                                       selectedClippingLineIndex,
+                                       new Line(newPoint, oldLine.getEnd())
+                               );
+                           } else if (selectedClippingLineEndpoint == LineEndpoint.END) {
+                               clippingLines.setLine(
+                                       selectedClippingLineIndex,
+                                       new Line(oldLine.getStart(), newPoint)
+                               );
+                           }
+                           recomputeClippedLines();
                            drawScene();
                        }
                 }
@@ -184,6 +217,8 @@ public class Controller2D {
                         selectedPolygonPointIndex = -1;
                         selectedLineIndex = -1;
                         selectedLineEndpoint = null;
+                        selectedClippingLineIndex = -1;
+                        selectedClippingLineEndpoint = null;
                         break;
                 }
             }
@@ -198,12 +233,14 @@ public class Controller2D {
 
                     case KeyEvent.VK_L:
                         scanLineEnabled = false;
+                        clippingEnabled = false;
                         setDrawMode(DrawMode.LINE);
                         drawScene();
                         break;
 
                     case KeyEvent.VK_P:
                         scanLineEnabled = false;
+                        clippingEnabled = false;
                         setDrawMode(DrawMode.POLYGON);
                         drawScene();
                         break;
@@ -219,20 +256,30 @@ public class Controller2D {
                         break;
 
                     case KeyEvent.VK_F:
+                        clippingEnabled = false;
                         seedFillBoundaryMode =
                                 SeedFill.BoundaryMode.BACKGROUND_COLOR;
                         setDrawMode(DrawMode.FILL);
                         break;
 
                     case KeyEvent.VK_B:
+                        clippingEnabled = false;
                         seedFillBoundaryMode =
                                 SeedFill.BoundaryMode.BOUNDARY_COLOR;
                         setDrawMode(DrawMode.FILL);
                         break;
 
                     case KeyEvent.VK_S:
+                        clippingEnabled = false;
                         scanLineEnabled = true;
                         setDrawMode(DrawMode.POLYGON);
+                        drawScene();
+                        break;
+
+                    case KeyEvent.VK_R:
+                        scanLineEnabled = false;
+                        clippingEnabled = true;
+                        setDrawMode(DrawMode.LINE);
                         drawScene();
                         break;
                 }
@@ -264,6 +311,32 @@ public class Controller2D {
             seedFill.fill();
         }
 
+        if (clippingEnabled) {
+            drawClippingWindow();
+
+            for (int i = 0; i < clippingLines.getSize(); i++) {
+                Line original = clippingLines.getLine(i);
+                lineRasterizer.rasterize(
+                        original.getStart().getX(),
+                        original.getStart().getY(),
+                        original.getEnd().getX(),
+                        original.getEnd().getY(),
+                        0xAAAAAA
+                );
+            }
+            for (int i = 0; i < clippedLines.getSize(); i++) {
+                Line clipped = clippedLines.getLine(i);
+
+                lineRasterizer.rasterize(
+                        clipped.getStart().getX(),
+                        clipped.getStart().getY(),
+                        clipped.getEnd().getX(),
+                        clipped.getEnd().getY(),
+                        0xFF0000
+                );
+            }
+        }
+
         panel.repaint();
     }
 
@@ -281,6 +354,11 @@ public class Controller2D {
         selectedPolygonPointIndex = -1;
         selectedLineIndex = -1;
         selectedLineEndpoint = null;
+        selectedClippingLineIndex = -1;
+        selectedClippingLineEndpoint = null;
+        clippingLines.clearLines();
+        clippedLines.clearLines();
+        clippingEnabled = false;
 
         panel.repaint();
     }
@@ -299,6 +377,8 @@ public class Controller2D {
         selectedPolygonPointIndex = -1;
         selectedLineIndex = -1;
         selectedLineEndpoint = null;
+        selectedClippingLineIndex = -1;
+        selectedClippingLineEndpoint = null;
     }
 
     private void handleLinePressed(MouseEvent e){
@@ -368,8 +448,14 @@ public class Controller2D {
         }else {
             lineEnd = new Point2D(e.getX(), e.getY());
         }
+        Line line = new Line(lineStart, lineEnd);
 
-        lines.addLine(new Line(lineStart, lineEnd));
+        if(clippingEnabled){
+            clipLine(line);
+        }else{
+            lines.addLine(line);
+        }
+
         lineStart = null;
         drawScene();
     }
@@ -388,6 +474,8 @@ public class Controller2D {
         selectedPolygonPointIndex = -1;
         selectedLineIndex = -1;
         selectedLineEndpoint = null;
+        selectedClippingLineIndex = -1;
+        selectedClippingLineEndpoint = null;
         // The squared distance avoids an unnecessary square-root calculation.
         double closestDistanceSquared = 10*10;
 
@@ -428,6 +516,32 @@ public class Controller2D {
                 }
             }
         }
+        if (clippingEnabled) {
+            for (int i = 0; i < clippingLines.getSize(); i++) {
+                Line line = clippingLines.getLine(i);
+                double dx = line.getStart().getX() - e.getX();
+                double dy = line.getStart().getY() - e.getY();
+                double distanceSquared = dx * dx + dy * dy;
+                if (distanceSquared < closestDistanceSquared) {
+                    closestDistanceSquared = distanceSquared;
+                    selectedClippingLineIndex = i;
+                    selectedClippingLineEndpoint = LineEndpoint.START;
+                    selectedPolygonPointIndex = -1;
+                    selectedLineIndex = -1;
+                }
+
+                dx = line.getEnd().getX() - e.getX();
+                dy = line.getEnd().getY() - e.getY();
+                distanceSquared = dx * dx + dy * dy;
+                if (distanceSquared < closestDistanceSquared) {
+                    closestDistanceSquared = distanceSquared;
+                    selectedClippingLineIndex = i;
+                    selectedClippingLineEndpoint = LineEndpoint.END;
+                    selectedPolygonPointIndex = -1;
+                    selectedLineIndex = -1;
+                }
+            }
+        }
     }
 
     private void handleDeletePressed(){
@@ -438,6 +552,10 @@ public class Controller2D {
         }
         else if(selectedLineIndex!=-1) {
             lines.removeLine(selectedLineIndex);
+        }
+        else if (selectedClippingLineIndex != -1) {
+            clippingLines.removeLine(selectedClippingLineIndex);
+            recomputeClippedLines();
         }
 
     }
@@ -535,6 +653,45 @@ public class Controller2D {
 
         return dx * dx + dy * dy;
     }
+
+    private void drawClippingWindow() {
+        int xmin = 150;
+        int xmax = 650;
+        int ymin = 100;
+        int ymax = 450;
+        lineRasterizer.rasterize(
+                xmin, ymin,
+                xmax, ymin
+        );
+        lineRasterizer.rasterize(
+                xmax, ymin,
+                xmax, ymax
+        );
+        lineRasterizer.rasterize(
+                xmax, ymax,
+                xmin, ymax
+        );
+        lineRasterizer.rasterize(
+                xmin, ymax,
+                xmin, ymin
+        );
+    }
+
+    private void clipLine(Line line) {
+        clippingLines.addLine(line);
+        recomputeClippedLines();
+    }
+
+    private void recomputeClippedLines() {
+        clippedLines.clearLines();
+        for (int i = 0; i < clippingLines.getSize(); i++) {
+            Line clipped = clipper.clip(clippingLines.getLine(i));
+            if (clipped != null) {
+                clippedLines.addLine(clipped);
+            }
+        }
+    }
+
 
 
 }
