@@ -59,19 +59,6 @@ public class SeedFill implements Filler {
     }
 
 
-    private void fillRecursive(int x, int y, int targetColor) {
-        if (!isInside(x, y) || raster.getPixel(x, y) != targetColor) {
-            return;
-        }
-
-        raster.setPixel(x, y, fillColor);
-
-        fillRecursive(x + 1, y, targetColor);
-        fillRecursive(x - 1, y, targetColor);
-        fillRecursive(x, y + 1, targetColor);
-        fillRecursive(x, y - 1, targetColor);
-    }
-
     private void fillIterative(int startX, int startY, int targetColor) {
         Deque<Point2D> pixels = new ArrayDeque<>();
         pixels.push(new Point2D(startX, startY));
