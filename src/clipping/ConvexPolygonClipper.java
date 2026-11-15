@@ -124,10 +124,10 @@ public class ConvexPolygonClipper {
             Point2D b,
             Point2D point
     ) {
-        return (double) (b.getX() - a.getX())
-                * (point.getY() - a.getY())
-                - (double) (b.getY() - a.getY())
-                * (point.getX() - a.getX());
+        return (double) (b.x() - a.x())
+                * (point.y() - a.y())
+                - (double) (b.y() - a.y())
+                * (point.x() - a.x());
     }
 
     private double signedArea(Polygon polygon) {
@@ -139,8 +139,8 @@ public class ConvexPolygonClipper {
                     (i + 1) % polygon.getSize()
             );
 
-            area += (double) current.getX() * next.getY()
-                    - (double) next.getX() * current.getY();
+            area += (double) current.x() * next.y()
+                    - (double) next.x() * current.y();
         }
 
         return area / 2.0;
@@ -152,11 +152,11 @@ public class ConvexPolygonClipper {
             Point2D clipStart,
             Point2D clipEnd
     ) {
-        double subjectX = subjectEnd.getX() - subjectStart.getX();
-        double subjectY = subjectEnd.getY() - subjectStart.getY();
+        double subjectX = subjectEnd.x() - subjectStart.x();
+        double subjectY = subjectEnd.y() - subjectStart.y();
 
-        double clipX = clipEnd.getX() - clipStart.getX();
-        double clipY = clipEnd.getY() - clipStart.getY();
+        double clipX = clipEnd.x() - clipStart.x();
+        double clipY = clipEnd.y() - clipStart.y();
 
         double denominator = subjectX * clipY - subjectY * clipX;
 
@@ -164,16 +164,16 @@ public class ConvexPolygonClipper {
             return null;
         }
 
-        double startToClipX = clipStart.getX()
-                - subjectStart.getX();
-        double startToClipY = clipStart.getY()
-                - subjectStart.getY();
+        double startToClipX = clipStart.x()
+                - subjectStart.x();
+        double startToClipY = clipStart.y()
+                - subjectStart.y();
 
         double t = (startToClipX * clipY
                 - startToClipY * clipX) / denominator;
 
-        double x = subjectStart.getX() + t * subjectX;
-        double y = subjectStart.getY() + t * subjectY;
+        double x = subjectStart.x() + t * subjectX;
+        double y = subjectStart.y() + t * subjectY;
 
         return new Point2D(
                 (int) Math.round(x),
@@ -202,8 +202,8 @@ public class ConvexPolygonClipper {
 
         Point2D previous = points.get(points.size() - 1);
 
-        if (previous.getX() != point.getX()
-                || previous.getY() != point.getY()) {
+        if (previous.x() != point.x()
+                || previous.y() != point.y()) {
             points.add(point);
         }
     }
@@ -221,8 +221,8 @@ public class ConvexPolygonClipper {
                 polygon.getSize() - 1
         );
 
-        if (previous.getX() != point.getX()
-                || previous.getY() != point.getY()) {
+        if (previous.x() != point.x()
+                || previous.y() != point.y()) {
             polygon.addPoint(point);
         }
     }
@@ -237,8 +237,8 @@ public class ConvexPolygonClipper {
                 polygon.getSize() - 1
         );
 
-        if (first.getX() == last.getX()
-                && first.getY() == last.getY()) {
+        if (first.x() == last.x()
+                && first.y() == last.y()) {
             polygon.removePoint(polygon.getSize() - 1);
         }
     }

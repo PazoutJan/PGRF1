@@ -11,10 +11,10 @@ public class Edge {
     }
 
     public Edge(Point2D a, Point2D b) {
-        this.x1 = a.getX();
-        this.y1 = a.getY();
-        this.x2 = b.getX();
-        this.y2 = b.getY();
+        this.x1 = a.x();
+        this.y1 = a.y();
+        this.x2 = b.x();
+        this.y2 = b.y();
     }
 
     public int getX1() {
@@ -37,8 +37,8 @@ public class Edge {
         return y1 == y2;
     }
 
-    public void orientate(){
-        if(y1>y2){
+    public void orientate() {
+        if (y1 > y2) {
             int tempx = x1;
             int tempy = y1;
             x1 = x2;
@@ -48,7 +48,7 @@ public class Edge {
         }
     }
 
-    public boolean isIntersection(int y){
+    public boolean isIntersection(int y) {
         return y >= y1 && y < y2;
     }
 

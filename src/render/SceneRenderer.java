@@ -2,11 +2,7 @@ package render;
 
 import fill.ScanLineFill;
 import fill.SeedFill;
-import model.Fill;
-import model.Line;
-import model.Lines;
-import model.Point2D;
-import model.Scene;
+import model.*;
 import raster.Raster;
 import rasterize.LineRasterizer;
 import rasterize.LineRasterizerTrivial;
@@ -51,10 +47,10 @@ public class SceneRenderer {
         raster.clear();
 
         if (polygonClippingMode) {
-                polygonRasterizer.rasterize(
-                        scene.getPolygonToClip(),
-                        scene.getPolygonToClip().getColor()
-                );
+            polygonRasterizer.rasterize(
+                    scene.getPolygonToClip(),
+                    scene.getPolygonToClip().getColor()
+            );
             polygonRasterizer.rasterize(
                     scene.getClippingPolygon(),
                     CLIPPING_WINDOW_COLOR
@@ -81,10 +77,10 @@ public class SceneRenderer {
 
         // Fill after drawing boundaries so seed fill cannot cross them.
         for (Fill fill : scene.getFills()) {
-            seedFill.setSeed(fill.getSeed());
-            seedFill.setFillColor(fill.getColor());
-            seedFill.setBoundaryMode(fill.getBoundaryMode());
-            seedFill.setBoundaryColor(fill.getBoundaryColor());
+            seedFill.setSeed(fill.seed());
+            seedFill.setFillColor(fill.color());
+            seedFill.setBoundaryMode(fill.boundaryMode());
+            seedFill.setBoundaryColor(fill.boundaryColor());
             seedFill.fill();
         }
 
@@ -121,9 +117,9 @@ public class SceneRenderer {
         for (int i = 0; i < lines.getSize(); i++) {
             Line line = lines.getLine(i);
             lineRasterizer.rasterize(
-                    line.getStart(),
-                    line.getEnd(),
-                    line.getColor()
+                    line.start(),
+                    line.end(),
+                    line.color()
             );
         }
     }
@@ -131,7 +127,7 @@ public class SceneRenderer {
     private void rasterizeLines(Lines lines, int color) {
         for (int i = 0; i < lines.getSize(); i++) {
             Line line = lines.getLine(i);
-            lineRasterizer.rasterize(line.getStart(), line.getEnd(), color);
+            lineRasterizer.rasterize(line.start(), line.end(), color);
         }
     }
 

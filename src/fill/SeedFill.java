@@ -2,6 +2,7 @@ package fill;
 
 import model.Point2D;
 import raster.Raster;
+
 import java.util.ArrayDeque;
 import java.util.Deque;
 
@@ -25,7 +26,7 @@ public class SeedFill implements Filler {
         if (seed == null) {
             return;
         }
-        fill(seed.getX(), seed.getY());
+        fill(seed.x(), seed.y());
     }
 
     public void fill(int x, int y) {
@@ -49,7 +50,6 @@ public class SeedFill implements Filler {
 
     public void setSeed(Point2D seed) {
         this.seed = seed;
-        ;
     }
 
 
@@ -66,22 +66,22 @@ public class SeedFill implements Filler {
         while (!pixels.isEmpty()) {
             Point2D pixel = pixels.pop();
 
-            if (!isInside(pixel.getX(), pixel.getY())) {
+            if (!isInside(pixel.x(), pixel.y())) {
                 continue;
             }
 
-            int currentColor = raster.getPixel(pixel.getX(), pixel.getY());
+            int currentColor = raster.getPixel(pixel.x(), pixel.y());
 
             if (!canFill(currentColor, targetColor)) {
                 continue;
             }
 
-            raster.setPixel(pixel.getX(), pixel.getY(), fillColor);
+            raster.setPixel(pixel.x(), pixel.y(), fillColor);
 
-            pixels.push(new Point2D(pixel.getX() + 1, pixel.getY()));
-            pixels.push(new Point2D(pixel.getX() - 1, pixel.getY()));
-            pixels.push(new Point2D(pixel.getX(), pixel.getY() + 1));
-            pixels.push(new Point2D(pixel.getX(), pixel.getY() - 1));
+            pixels.push(new Point2D(pixel.x() + 1, pixel.y()));
+            pixels.push(new Point2D(pixel.x() - 1, pixel.y()));
+            pixels.push(new Point2D(pixel.x(), pixel.y() + 1));
+            pixels.push(new Point2D(pixel.x(), pixel.y() - 1));
         }
     }
 

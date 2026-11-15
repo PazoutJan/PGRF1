@@ -1,10 +1,6 @@
 package interaction;
 
-import model.Line;
-import model.Lines;
-import model.Point2D;
-import model.Polygon;
-import model.Scene;
+import model.*;
 
 /**
  * Selects the closest editable vertex while preserving the original 10 pixel
@@ -29,13 +25,13 @@ public class VertexSelector {
         Lines lines = scene.getLines();
         for (int i = 0; i < lines.getSize(); i++) {
             Line line = lines.getLine(i);
-            double startDistance = distanceSquared(line.getStart(), x, y);
+            double startDistance = distanceSquared(line.start(), x, y);
             if (startDistance < closestDistanceSquared) {
                 closestDistanceSquared = startDistance;
                 selection = Selection.lineEndpoint(i, Selection.Endpoint.START);
             }
 
-            double endDistance = distanceSquared(line.getEnd(), x, y);
+            double endDistance = distanceSquared(line.end(), x, y);
             if (endDistance < closestDistanceSquared) {
                 closestDistanceSquared = endDistance;
                 selection = Selection.lineEndpoint(i, Selection.Endpoint.END);
@@ -46,7 +42,7 @@ public class VertexSelector {
             Lines clippingLines = scene.getClippingLines();
             for (int i = 0; i < clippingLines.getSize(); i++) {
                 Line line = clippingLines.getLine(i);
-                double startDistance = distanceSquared(line.getStart(), x, y);
+                double startDistance = distanceSquared(line.start(), x, y);
                 if (startDistance < closestDistanceSquared) {
                     closestDistanceSquared = startDistance;
                     selection = Selection.clippingLineEndpoint(
@@ -55,7 +51,7 @@ public class VertexSelector {
                     );
                 }
 
-                double endDistance = distanceSquared(line.getEnd(), x, y);
+                double endDistance = distanceSquared(line.end(), x, y);
                 if (endDistance < closestDistanceSquared) {
                     closestDistanceSquared = endDistance;
                     selection = Selection.clippingLineEndpoint(
@@ -70,8 +66,8 @@ public class VertexSelector {
     }
 
     private double distanceSquared(Point2D point, int x, int y) {
-        double dx = point.getX() - x;
-        double dy = point.getY() - y;
+        double dx = point.x() - x;
+        double dy = point.y() - y;
         return dx * dx + dy * dy;
     }
 }

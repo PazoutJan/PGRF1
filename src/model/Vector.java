@@ -1,19 +1,5 @@
 package model;
 
-public class Vector {
+public record Vector(int x, int y) {
 
-    private final int x, y;
-    public Vector(int x, int y)
-    {
-        this.x = x;
-        this.y = y;
-    }
-
-    public int getX() {
-        return x;
-    }
-
-    public int getY() {
-        return y;
-    }
 }

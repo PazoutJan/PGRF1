@@ -8,7 +8,7 @@ import raster.Raster;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ScanLineFill implements Filler{
+public class ScanLineFill implements Filler {
 
     private int fillColor;
     private Polygon polygon;
@@ -20,7 +20,6 @@ public class ScanLineFill implements Filler{
     }
 
 
-
     @Override
     public void fill() {
         if (polygon == null || polygon.getSize() < 3) {
@@ -29,15 +28,15 @@ public class ScanLineFill implements Filler{
 
         List<Edge> edges = new ArrayList<>();
 
-        int yMin = polygon.getPoint(0).getY();
+        int yMin = polygon.getPoint(0).y();
         int yMax = yMin;
 
         for (int i = 0; i < polygon.getSize(); i++) {
             Point2D pointA = polygon.getPoint(i);
             Point2D pointB = polygon.getPoint((i + 1) % polygon.getSize());
 
-            yMin = Math.min(yMin, pointA.getY());
-            yMax = Math.max(yMax, pointA.getY());
+            yMin = Math.min(yMin, pointA.y());
+            yMax = Math.max(yMax, pointA.y());
 
             Edge edge = new Edge(pointA, pointB);
 

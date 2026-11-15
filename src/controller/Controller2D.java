@@ -5,11 +5,7 @@ import fill.SeedFill;
 import geometry.ConstrainedLine;
 import interaction.Selection;
 import interaction.VertexSelector;
-import model.Fill;
-import model.Line;
-import model.Lines;
-import model.Point2D;
-import model.Scene;
+import model.*;
 import render.SceneRenderer;
 import view.ColorPalette;
 import view.Panel;
@@ -383,12 +379,12 @@ public class Controller2D {
         if (selected.getEndpoint() == Selection.Endpoint.START) {
             lines.setLine(
                     selected.getIndex(),
-                    new Line(newPoint, oldLine.getEnd(), oldLine.getColor())
+                    new Line(newPoint, oldLine.end(), oldLine.color())
             );
         } else {
             lines.setLine(
                     selected.getIndex(),
-                    new Line(oldLine.getStart(), newPoint, oldLine.getColor())
+                    new Line(oldLine.start(), newPoint, oldLine.color())
             );
         }
     }
@@ -453,7 +449,7 @@ public class Controller2D {
         }
 
         if (scene.getLines().getSize() > 0) {
-            return scene.getLines().getLine(0).getColor();
+            return scene.getLines().getLine(0).color();
         }
 
         return 0xFFFFFF;
